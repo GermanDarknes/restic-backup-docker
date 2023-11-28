@@ -48,7 +48,7 @@ RUN mkdir /.cache && \
     chmod -R g=u /var/log/cron.log
 
 # /data is the dir where you have to put the data to be backed up
-VOLUME /data
+RUN mkdir /data
 
 COPY backup.sh /bin/backup
 COPY check.sh /bin/check
