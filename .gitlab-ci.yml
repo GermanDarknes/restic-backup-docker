@@ -1,0 +1,48 @@
+image: docker:stable
+
+stages:
+  - build
+  - push
+
+services:
+  - name: docker:dind
+
+before_script:
+  - echo -n $CI_JOB_TOKEN | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+Build:
+  stage: build
+  only:
+    - web
+    - master
+  script:
+    # fetches the latest image to use as cache
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    # build image with all labels
+    - >
+      docker build
+      --pull
+      --cache-from $CI_REGISTRY_IMAGE:latest
+      --label "org.opencontainers.image.title=$CI_PROJECT_TITLE"
+      --label "org.opencontainers.image.url=$CI_PROJECT_URL"
+      --label "org.opencontainers.image.created=$CI_JOB_STARTED_AT"
+      --label "org.opencontainers.image.revision=$CI_COMMIT_SHA"
+      --label "org.opencontainers.image.version=$CI_COMMIT_REF_NAME"
+      --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA
+      .
+    # Push it into the registry
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA
+
+Push:
+  variables:
+    GIT_STRATEGY: none
+  stage: push
+  only:
+    - master
+  script:
+    # Pull current image
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA
+    # Tag it "latest"
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    # Push it into the registry
+    - docker push $CI_REGISTRY_IMAGE:latest
