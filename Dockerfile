@@ -13,7 +13,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
     fi
 
 
-FROM docker.io/restic/restic:0.18.1
+FROM docker.io/restic/restic:0.19.0
 
 RUN apk add --update --no-cache curl mailx shadow
 
